@@ -31,7 +31,7 @@ for i in range(-12, 12):
 
         worldNoise = flatNoise * hillyNoise
 
-        voxels.append(Voxel(position = Vec3(j, worldNoise, i)))
+        voxels.append(Voxel(position = Vec3(j, 0, i)))
     
 def update():
     # Close game window

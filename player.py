@@ -18,7 +18,7 @@ class Player(Entity):
         self.cursor = Entity(
             parent = camera.ui,
             model = 'circle',
-            color = color.white,
+            color = color.black,
             scale = .008
         )
 
