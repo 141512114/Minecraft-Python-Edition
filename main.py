@@ -1,7 +1,6 @@
 from ursina import *
 
 from opensimplex import OpenSimplex
-import keyboard
 
 from player import Player
 from voxel import *
