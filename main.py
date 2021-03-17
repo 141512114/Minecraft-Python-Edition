@@ -73,6 +73,7 @@ class Player(Entity):
         v_move = held_keys['w'] - held_keys['s']
         h_move = held_keys['d'] - held_keys['a']
 
+        # Get direction vectors
         forward_dir = self.forward * v_move
         sides_dir = self.right * h_move
 
@@ -106,11 +107,13 @@ class Player(Entity):
             self.reduce_jump_vel = 0
             self.grounded = True
 
+        # Apply gravity if we're not jumping and not grounded
         if not self.grounded and not self.jumping:
             self.fall_speed += self.fall_acc * time.dt
             self.fall_speed = clamp(self.fall_speed, 0, gravity)
             self.position = Vec3(self.position.x, self.position.y - self.fall_speed, self.position.z)
 
+        # If 'Space' is pressed, set self.jumping to true
         if (held_keys['space'] and self.grounded):
             self.jumping = True
 
@@ -141,6 +144,7 @@ class Voxel(Entity):
         self.durab = durab
 
     def input(self, key):
+        # Check if cursor is hovering over voxel and if it's in range
         if (self.hovered and distance(self.position, camera.position) <= 13):
             if (key == 'left mouse down'):
                 self.remove_durab()
@@ -171,7 +175,6 @@ for i in range(-12, 12):
 
         voxels.append(Voxel(position = Vec3(j, worldNoise, i)))
     
-
 def update():
     # Close game window
     if (held_keys['escape']):
