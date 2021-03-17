@@ -98,7 +98,6 @@ class Player(Entity):
         else:
             self.fall_speed = 0
             self.jump_speed = 0
-            self.reduce_jump_vel = 0
             self.grounded = True
 
         # Apply gravity if we're not jumping and not grounded
