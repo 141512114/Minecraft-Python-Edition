@@ -40,9 +40,6 @@ class Player(Entity):
         self.grounded = False
         self.jumping = False
 
-        self.forward_col_ray = None
-        self.sides_col_ray = None
-
         # Camera settings
         camera.fov = 80
         camera.orthographic = False
@@ -71,21 +68,23 @@ class Player(Entity):
         forward_dir = self.forward * v_move
         sides_dir = self.right * h_move
 
-        col_ray_origin = self.world_position
-        col_ray_dist = .25
+        if (self.intersects().hit):
+            col_entity_list = self.intersects().entities
+            for i in range(len(col_entity_list)):
+                col_entity_pos = col_entity_list[i].position
 
-        # Forward ray: check if something blocks the way when walking forward or backward
-        self.forward_col_ray = boxcast(col_ray_origin, forward_dir, distance = col_ray_dist, thickness = (1, 1), ignore = (self,))
-        if (self.forward_col_ray.hit):
-            forward_dir = self.forward * 0
+                ray_pos = Vec3(self.position.x, col_entity_pos.y, self.position.z)
+                forward_col_ray = raycast(ray_pos, self.forward * v_move, distance = 1, ignore = (self,))
+                sides_col_ray = raycast(ray_pos, self.right * h_move, distance = 1, ignore = (self,))
 
-        # Sides ray: check if something blocks the way when walking sideways
-        self.sides_col_ray = boxcast(col_ray_origin, sides_dir, distance = col_ray_dist, thickness = (1, 1), ignore = (self,))
-        if (self.sides_col_ray.hit):
-            sides_dir = self.right * 0
+                if (col_entity_pos.y >= self.position.y and col_entity_pos.y <= camera.position.y):
+                    if (forward_col_ray.hit and forward_col_ray.entity == col_entity_list[i]):
+                        forward_dir = self.forward * 0
+
+                    if (sides_col_ray.hit and sides_col_ray.entity == col_entity_list[i]):
+                        sides_dir = self.right * 0
 
         direction = Vec3(forward_dir + sides_dir).normalized()
-
         self.position += direction * self.move_speed * time.dt
 
         # Position the camera where the players head should be
