@@ -1,7 +1,8 @@
 from ursina import *
+from voxel import *
 
 class Player(Entity):
-    def __init__(self, position = (0, 3, 0), gravity = 9.8):
+    def __init__(self, position = (0, 0, 0), gravity = 9.8):
         super().__init__(
             parent = scene,
             model = 'cube',
@@ -9,24 +10,16 @@ class Player(Entity):
             rotation = (0, 0, 0),
             color = color.orange,
             visible_self = False,
-            scale_y = 1,
-            collider = 'box',
-            collision = True,
-            origin_y = 0
-        )
-
-        self.cursor = Entity(
-            parent = camera.ui,
-            model = 'circle',
-            color = color.black,
-            scale = .008
+            origin_y = -1
         )
 
         # Default variables (Initalization)
-        self.player_height = 1.25
+        self.player_height = 1.27
 
-        self.move_speed = 2.75
+        self.move_speed = 3.75
         self.mouse_siv = 33
+
+        self.hit_range_ray = None
 
         self.gravity = gravity
 
@@ -37,22 +30,51 @@ class Player(Entity):
         self.jump_speed = 0
         self.jump_acc = .865
 
+        # Player states
         self.grounded = False
         self.jumping = False
+
+        # Create seperated collider box, so the player can rotate without messing with its collider
+        self.e_col = Entity(
+            parent = scene,
+            model = 'cube',
+            position = position,
+            rotation = (0, 0, 0),
+            color = color.white,
+            visible_self = False,
+            origin_y = -1
+        )
+        collider_height = 2
+        self.e_col.collider = BoxCollider(
+            self.e_col,
+            center = Vec3(0, -self.e_col.origin_y + (collider_height-1)/2, 0),
+            size = Vec3(self.e_col.scale_x, collider_height, self.e_col.scale_z)
+        )
+
+        # Create cursor entity
+        self.cursor = Entity(
+            parent = camera.ui,
+            model = 'circle',
+            color = color.black,
+            scale = .008
+        )
 
         # Camera settings
         camera.fov = 80
         camera.orthographic = False
 
         # Position the camera where the players head should be
-        camera.position = Vec3(self.position.x, self.position.y + self.player_height, self.position.z)
+        camera.position = Vec3(self.position.x, (self.position.y - self.origin_y) + self.player_height, self.position.z)
         camera.rotation = self.rotation
 
         mouse.locked = True
         mouse.visible = False
 
     def update(self):
-        global gravity
+        e_col = self.e_col
+        ignore_list = [self, e_col]
+
+        self_origin_pos = Vec3(self.position.x, self.position.y - self.origin_y, self.position.z)
 
         # Rotate camera to where "the player is looking"
         camera.rotation_y += mouse.velocity[0] * self.mouse_siv
@@ -60,55 +82,73 @@ class Player(Entity):
         camera.rotation_x = clamp(camera.rotation_x, -90, 90)
         self.rotation_y = camera.rotation_y
 
+        self.hit_range_ray = raycast(camera.position, camera.forward, distance = 13, ignore = ignore_list)
+
         # Get the direction we're trying to walk in.
         v_move = held_keys['w'] - held_keys['s']
         h_move = held_keys['d'] - held_keys['a']
 
-        # Get direction vectors
+        # Get direction vectors (but from the player entity)
         forward_dir = self.forward * v_move
         sides_dir = self.right * h_move
 
-        if (self.intersects().hit):
-            col_entity_list = self.intersects().entities
-            for i in range(len(col_entity_list)):
-                col_entity_pos = col_entity_list[i].position
+        # Round both direction vectors to whole numbers (ints) => works better in this voxel game
+        forward_dir_ch = Vec3(round_to_closest(forward_dir.x, step = 1), 0, round_to_closest(forward_dir.z, step = 1))
+        sides_dir_ch = Vec3(round_to_closest(sides_dir.x, step = 1), 0, round_to_closest(sides_dir.z, step = 1))
 
-                ray_pos = Vec3(self.position.x, col_entity_pos.y, self.position.z)
-                forward_col_ray = raycast(ray_pos, self.forward * v_move, distance = 1, ignore = (self,))
-                sides_col_ray = raycast(ray_pos, self.right * h_move, distance = 1, ignore = (self,))
+        # Create collision rays
+        forward_ray = raycast(self_origin_pos, forward_dir_ch, distance = 1, ignore = ignore_list)
+        sides_ray = raycast(self_origin_pos, sides_dir_ch, distance = 1, ignore = ignore_list)
 
-                if (col_entity_pos.y >= self.position.y and col_entity_pos.y <= camera.position.y):
-                    if (forward_col_ray.hit and forward_col_ray.entity == col_entity_list[i]):
-                        forward_dir = self.forward * 0
+        down_ray = boxcast(self_origin_pos, self.down, distance = 1, thickness = (e_col.scale_x, e_col.scale_y), ignore = ignore_list)
+        up_ray = boxcast(camera.position, self.up, distance = 1, thickness = (e_col.scale_x, e_col.scale_y), ignore = ignore_list)
 
-                    if (sides_col_ray.hit and sides_col_ray.entity == col_entity_list[i]):
-                        sides_dir = self.right * 0
-
-        direction = Vec3(forward_dir + sides_dir).normalized()
-        self.position += direction * self.move_speed * time.dt
-
-        # Position the camera where the players head should be
-        camera.position = Vec3(self.position.x, self.position.y + self.player_height, self.position.z)
-
-        # Gravity: check if any floor exists and if not, the player falls
-        bottom_cast = boxcast(Vec3(self.position.x, self.position.y - (self.scale_y / 2), self.position.z), self.down, distance = .1, thickness = (1, 1), ignore = (self,))
-        if not bottom_cast.hit:
-            self.grounded = False
-        else:
-            self.fall_speed = 0
-            self.jump_speed = 0
-            self.grounded = True
-
-        # Apply gravity if we're not jumping and not grounded
-        if not self.grounded and not self.jumping:
-            self.fall_speed += self.fall_acc * time.dt
-            self.fall_speed = clamp(self.fall_speed, 0, self.gravity)
-            self.position = Vec3(self.position.x, self.position.y - self.fall_speed, self.position.z)
+        forward_cam_ray = raycast(camera.position, forward_dir_ch, distance = 1, ignore = ignore_list)
+        sides_cam_ray = raycast(camera.position, sides_dir_ch, distance = 1, ignore = ignore_list)
 
         # If 'Space' is pressed, set self.jumping to true
         if (held_keys['space'] and self.grounded):
             self.jumping = True
 
+        # Check if the players collider box intersects with any other collider box
+        if (not e_col.intersects().hit):
+            if (not down_ray.hit):
+                self.grounded = False
+        else:
+            # Save the entity list and walk through one by one
+            col_entity_list = e_col.intersects().entities
+            for i in range(len(col_entity_list)):
+                col_entity_pos = col_entity_list[i].position
+
+                # If it's inside the players y-range (so on the same layer as his collider box)
+                if (col_entity_pos.y > e_col.position.y and col_entity_pos.y <= camera.position.y):
+                    # Check if the player hits any collider block on it's forward direction
+                    if (forward_ray.hit and forward_ray.entity == col_entity_list[i]) or (forward_cam_ray.hit and forward_cam_ray.entity == col_entity_list[i]):
+                        forward_dir = self.forward * 0
+
+                    # Check if the player hits any collider block on it's right direction
+                    if (sides_ray.hit and sides_ray.entity == col_entity_list[i]) or (sides_cam_ray.hit and sides_cam_ray.entity == col_entity_list[i]):
+                        sides_dir = self.right * 0
+
+                # Check if the player is colliding with something above him
+                if (up_ray.hit and up_ray.entity == col_entity_list[i]):
+                    self.jump_speed = 0
+                    self.jumping = False
+                    self.grounded = False
+
+                # Check if the player is colliding with something beneath him => if he does, grounded = True
+                if (down_ray.hit and down_ray.entity == col_entity_list[i] and not self.jumping):
+                    self.jump_speed = 0
+                    self.fall_speed = 0
+                    self.grounded = True
+
+        # Apply gravity if we're not jumping and not grounded
+        if (not self.grounded and not self.jumping):
+            self.fall_speed += self.fall_acc * time.dt
+            self.fall_speed = clamp(self.fall_speed, 0, self.gravity)
+            self.position = Vec3(self.position.x, self.position.y - self.fall_speed, self.position.z)
+
+        # If the player state 'jumping' is True, manipulate the y-position of the player
         if (self.jumping):
             self.jump_speed += self.jump_acc * time.dt
             self.jump_speed = clamp(self.jump_speed, 0, self.jump_height)
@@ -117,3 +157,22 @@ class Player(Entity):
 
             if (self.jump_speed >= self.jump_height):
                 self.jumping = False
+
+        # Add both directions together and normalize them so we can use the new vector for the players movement direction
+        direction = Vec3(forward_dir + sides_dir).normalized()
+        self.position += direction * self.move_speed * time.dt
+        self.e_col.position = self.position
+
+        # Position the camera where the players head should be
+        camera.position = Vec3(self.position.x, (self.position.y - self.origin_y)  + self.player_height, self.position.z)
+
+    def input(self, key):
+        # Check if anything is in the players hit range
+        if (self.hit_range_ray.hit):
+            col_entity = self.hit_range_ray.entity
+            # If it's of the type 'Voxel'
+            if (col_entity.type == 'Voxel'):
+                if (key == 'left mouse down'):
+                    col_entity.remove_durab()
+                elif (key == 'right mouse down'):
+                    voxels.append(Voxel(position = col_entity.position + mouse.collisions[1].normal))

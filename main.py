@@ -15,6 +15,7 @@ app = Ursina()
 
 # Set settings for the window
 window.title = "Minecraft: Python Edition"
+# window.show_ursina_splash = True
 window.borderless = False
 window.exit_button.enabled = False
 window.fps_counter.enabled = True

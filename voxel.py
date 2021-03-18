@@ -17,14 +17,6 @@ class Voxel(Entity):
 
         self.durab = durab
 
-    def input(self, key):
-        # Check if cursor is hovering over voxel and if it's in range
-        if (self.hovered and distance(self.position, camera.position) <= 13):
-            if (key == 'left mouse down'):
-                self.remove_durab()
-            elif (key == 'right mouse down'):
-                voxels.append(Voxel(position = self.position + mouse.normal))
-
     def remove_durab(self):
         self.durab -= 1
         if (self.durab <= 0):
