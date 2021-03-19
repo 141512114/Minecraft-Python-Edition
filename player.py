@@ -2,7 +2,7 @@ from ursina import *
 from voxel import *
 
 class Player(Entity):
-    def __init__(self, position = (0, 0, 0), gravity = 9.8):
+    def __init__(self, position = (0, 0, 0), gravity = 9.8, block_tex = 'white_cube'):
         super().__init__(
             parent = scene,
             model = 'cube',
@@ -29,6 +29,8 @@ class Player(Entity):
         self.jump_height = .21
         self.jump_speed = 0
         self.jump_acc = .865
+
+        self.block_tex = block_tex
 
         # Player states
         self.grounded = False
@@ -175,4 +177,4 @@ class Player(Entity):
                 if (key == 'left mouse down'):
                     col_entity.remove_durab()
                 elif (key == 'right mouse down'):
-                    voxels.append(Voxel(position = col_entity.position + mouse.collisions[1].normal))
+                    voxels.append(Voxel(position = col_entity.position + mouse.collisions[1].normal, texture = self.block_tex))
