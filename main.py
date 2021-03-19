@@ -14,11 +14,14 @@ simplexNoise = OpenSimplex()
 # Create application class
 app = Ursina()
 
+<<<<<<< HEAD
 application.asset_folder = application.asset_folder / 'assets'
 
 # Import textures
 grass_tex = load_texture('assets/textures/grass_block.png')
 
+=======
+>>>>>>> parent of 8155f5f (Added voxel model and texture)
 # Set settings for the window
 window.title = "Minecraft: Python Edition"
 # window.show_ursina_splash = True
@@ -28,7 +31,7 @@ window.fps_counter.enabled = True
 window.center_on_screen()
 
 # Create the player
-player = Player(gravity = gravity, block_tex = grass_tex)
+player = Player(gravity = gravity)
 
 # Create the terrain using simplex noise
 for i in range(-12, 12):
@@ -38,7 +41,7 @@ for i in range(-12, 12):
 
         worldNoise = flatNoise * hillyNoise
 
-        voxels.append(Voxel(position = Vec3(j, 0, i), texture = grass_tex))
+        voxels.append(Voxel(position = Vec3(j, 0, i)))
     
 def update():
     # Close game window
