@@ -46,18 +46,18 @@ class Player(Entity):
             visible_self = False,
             origin_y = -1
         )
-        collider_height = 2
+        collider_size = Vec3(1, 2, 1)
         self.e_col.collider = BoxCollider(
             self.e_col,
-            center = Vec3(0, -self.e_col.origin_y + (collider_height-1)/2, 0),
-            size = Vec3(self.e_col.scale_x, collider_height, self.e_col.scale_z)
+            center = Vec3(0, -self.e_col.origin_y + (collider_size.y-1)/2, 0),
+            size = collider_size
         )
 
         # Create cursor entity
         self.cursor = Entity(
             parent = camera.ui,
             model = 'circle',
-            color = color.black,
+            color = color.white,
             scale = .008
         )
 

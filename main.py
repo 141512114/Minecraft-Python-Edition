@@ -1,6 +1,7 @@
 from ursina import *
 
 from opensimplex import OpenSimplex
+from ursina.mesh_importer import compress_models
 
 from player import Player
 from voxel import *
@@ -12,6 +13,8 @@ simplexNoise = OpenSimplex()
 
 # Create application class
 app = Ursina()
+
+application.asset_folder = application.asset_folder / 'assets'
 
 # Import textures
 grass_tex = load_texture('assets/textures/grass_block.png')
