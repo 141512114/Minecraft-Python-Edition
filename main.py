@@ -36,7 +36,7 @@ for i in range(-12, 12):
 
         worldNoise = flatNoise * hillyNoise
 
-        voxels.append(Voxel(position = Vec3(j, 0, i), texture = grass_tex))
+        voxels.append(Voxel(position = Vec3(j, 0, i), texture = grass_tex, player = player))
     
 def update():
     # Close game window

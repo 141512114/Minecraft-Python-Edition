@@ -177,4 +177,4 @@ class Player(Entity):
                 if (key == 'left mouse down'):
                     col_entity.remove_durab()
                 elif (key == 'right mouse down'):
-                    voxels.append(Voxel(position = col_entity.position + mouse.collisions[1].normal, texture = self.block_tex))
+                    voxels.append(Voxel(position = col_entity.position + mouse.collisions[1].normal, texture = self.block_tex, player = self))
