@@ -2,7 +2,7 @@ from ursina import *
 from voxel import *
 
 class Player(Entity):
-    def __init__(self, position = (0, 0, 0), gravity = 9.8, block_tex = 'white_cube'):
+    def __init__(self, position = (0, 0, 0), block_tex = 'white_cube'):
         super().__init__(
             parent = scene,
             model = 'cube',
@@ -21,37 +21,7 @@ class Player(Entity):
 
         self.hit_range_ray = None
 
-        self.gravity = gravity
-
-        self.fall_speed = 0
-        self.fall_acc = .23
-
-        self.jump_height = .21
-        self.jump_speed = 0
-        self.jump_acc = .865
-
         self.block_tex = block_tex
-
-        # Player states
-        self.grounded = False
-        self.jumping = False
-
-        # Create seperated collider box, so the player can rotate without messing with its collider
-        self.e_col = Entity(
-            parent = scene,
-            model = 'cube',
-            position = position,
-            rotation = (0, 0, 0),
-            color = color.white,
-            visible_self = False,
-            origin_y = -1
-        )
-        collider_size = Vec3(1, 2, 1)
-        self.e_col.collider = BoxCollider(
-            self.e_col,
-            center = Vec3(0, -self.e_col.origin_y + (collider_size.y-1)/2, 0),
-            size = collider_size
-        )
 
         # Create cursor entity
         self.cursor = Entity(
@@ -73,10 +43,7 @@ class Player(Entity):
         mouse.visible = False
 
     def update(self):
-        e_col = self.e_col
-        ignore_list = [self, e_col]
-
-        self_origin_pos = Vec3(self.position.x, self.position.y - self.origin_y, self.position.z)
+        ignore_list = [self]
 
         # Rotate camera to where "the player is looking"
         camera.rotation_y += mouse.velocity[0] * self.mouse_siv
@@ -94,16 +61,22 @@ class Player(Entity):
         forward_dir = self.forward * v_move
         sides_dir = self.right * h_move
 
+        up_move = held_keys['space'] - held_keys['shift']
+        self.position = Vec3(self.position.x, self.position.y + (self.move_speed * time.dt) * up_move, self.position.z)
+
         # Add both directions together and normalize them so we can use the new vector for the players movement direction
         direction = Vec3(forward_dir + sides_dir).normalized()
         self.position += direction * self.move_speed * time.dt
-        self.e_col.position = self.position
 
         # Position the camera where the players head should be
-        camera.position = Vec3(self.position.x, (self.position.y - self.origin_y)  + self.player_height, self.position.z)
+        camera.position = Vec3(self.position.x, (self.position.y - self.origin_y) + self.player_height, self.position.z)
 
     def input(self, key):
         # Check if anything is in the players hit range
         if (self.hit_range_ray.hit):
-            print(self.hit_range_ray.point)
-            print(mouse.normal)
+            col_entity = self.hit_range_ray.entity
+            if (col_entity.type == 'Voxel'):
+                if (key == 'left mouse down'): # Remove block
+                    col_entity.remove_durab()
+                elif (key == 'right mouse down'): # Create block
+                    Voxel(position = col_entity.position + mouse.normal, texture = self.block_tex)
