@@ -105,11 +105,5 @@ class Player(Entity):
     def input(self, key):
         # Check if anything is in the players hit range
         if (self.hit_range_ray.hit):
-            col_entity = self.hit_range_ray.entity
-            # If it's of the type 'Voxel'
-            if (col_entity.type == 'Voxel'):
-                if (key == 'left mouse down'):
-                    col_entity.remove_durab()
-                elif (key == 'right mouse down'):
-                    Voxel(position = col_entity.position + mouse.collisions[1].normal, texture = self.block_tex, player = self)
-                    terrain.combine()
+            print(self.hit_range_ray.point)
+            print(mouse.normal)
