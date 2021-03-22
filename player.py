@@ -22,6 +22,7 @@ class Player(Entity):
         self.hit_range_ray = None
 
         self.block_tex = block_tex
+        self.current_slot = 0
 
         # Create cursor entity
         self.cursor = Entity(
@@ -30,6 +31,20 @@ class Player(Entity):
             color = color.white,
             scale = .008
         )
+
+        # Create hand with block item
+        self.hand = Entity(
+            parent = camera,
+            position = (.5, -.5, 1),
+            rotation = (0, -6, 0),
+            model = 'assets/models/voxel',
+            texture = self.block_tex[self.current_slot],
+            color = color.white,
+            scale = .35
+        )
+
+        self.animate_hand_ = False
+        self.animate_hand_duration = 0
 
         # Camera settings
         camera.fov = 80
@@ -50,6 +65,15 @@ class Player(Entity):
         camera.rotation_x -= mouse.velocity[1] * self.mouse_siv
         camera.rotation_x = clamp(camera.rotation_x, -90, 90)
         self.rotation_y = camera.rotation_y
+
+        if (self.animate_hand_):
+            if (self.animate_hand_duration < 4):
+                self.animate_hand_duration += 75 * time.dt
+                self.hand.rotation = Vec3(self.animate_hand_duration * 4, 0, 0)
+            else:
+                self.hand.rotation = Vec3(0, 0, 0)
+                self.animate_hand_duration = 0
+                self.animate_hand_ = False
 
         self.hit_range_ray = raycast(camera.position, camera.forward, distance = 13, ignore = ignore_list)
 
@@ -78,5 +102,29 @@ class Player(Entity):
             if (col_entity.type == 'Voxel'):
                 if (key == 'left mouse down'): # Remove block
                     col_entity.remove_durab()
+                    self.animate_hand()
                 elif (key == 'right mouse down'): # Create block
-                    Voxel(position = col_entity.position + mouse.normal, texture = self.block_tex)
+                    Voxel(position = col_entity.position + mouse.normal, texture = self.block_tex[self.current_slot], tex_arr = self.block_tex)
+                    self.animate_hand()
+
+        # Basic "slot"-system. Player can switch between different block "types"
+        if (key == 'left arrow'):
+            if (self.current_slot > 0):
+                self.current_slot -= 1
+            else:
+                self.current_slot = len(self.block_tex)-1
+
+            # Update hand model to fitting texture
+            self.hand.texture = self.block_tex[self.current_slot]
+        elif (key == 'right arrow'):
+            if (self.current_slot < len(self.block_tex)-1):
+                self.current_slot += 1
+            else:
+                self.current_slot = 0
+
+            # Update hand model to fitting texture
+            self.hand.texture = self.block_tex[self.current_slot]
+
+    def animate_hand(self):
+        self.animate_hand_duration = 0
+        self.animate_hand_ = True

@@ -8,12 +8,17 @@ from chunk import Chunk
 app = Ursina()
 
 # Import textures
-grass_tex = load_texture('assets/textures/grass_block.png')
+tex_array = [
+    load_texture('assets/textures/grass_block.png'),
+    load_texture('assets/textures/dirt_block.png'),
+    load_texture('assets/textures/cobble_block.png'),
+    load_texture('assets/textures/sand_block.png')
+]
 
 # Set settings for the window
 window.title = "Minecraft: Python Edition"
 window.vsync = False
-# window.show_ursina_splash = True
+window.show_ursina_splash = True
 window.borderless = False
 window.exit_button.enabled = False
 window.fps_counter.enabled = False
@@ -25,10 +30,10 @@ chunks = []
 chunk_amount = 1
 for ch_x in range(chunk_amount):
     for ch_z in range(chunk_amount):
-        chunks.append(Chunk(position = (ch_x, 0, ch_z), texture = grass_tex))
+        chunks.append(Chunk(position = (ch_x, 0, ch_z), texture = tex_array[0], tex_arr = tex_array))
 
 # Create the player
-player = Player(block_tex = grass_tex)
+player = Player(block_tex = tex_array)
     
 def update():
     # Close game window
