@@ -1,6 +1,9 @@
+# Libraries
 from ursina import *
+from ursina.color import rgba
 from ursina.prefabs.sky import Sky
 
+# Local files
 from player import Player
 from chunk import Chunk
 
@@ -34,6 +37,13 @@ for ch_x in range(chunk_amount):
 
 # Create the player
 player = Player(block_tex = tex_array)
+
+# Info
+text = Text(
+    text = 'Switch blocks with left and right arrow keys\nLook around by moving your mouse\nMove the player with WASD\nGo up with Space and down with Shift\n\nLeave by clicking Escape',
+    position = (-.86, .47)
+)
+text.create_background(padding = .1, radius = 0)
     
 def update():
     # Close game window

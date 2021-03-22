@@ -1,4 +1,7 @@
+# Libraries
 from ursina import *
+
+# Local files
 from voxel import *
 
 class Player(Entity):
